@@ -12,7 +12,7 @@ const bannedContents=[
  /(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{35,})/,
  /(?:sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{30,}|AKIA[0-9A-Z]{16})/,
  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
- /(?:\.workers\.dev|r2\.cloudflarestorage\.com|appgprj_)/i,
+ new RegExp('\\.workers\\.dev|r2\\.cloudflarestorage\\.com|app'+'gprj_', 'i'),
  new RegExp('EDINET_STATE_'+'R2_SECRET_ACCESS_KEY|edinet-company-'+'analysis-data'),
  /(?:^|\n)\s*pull_request_target\s*:/,
  /(?:^|\n)\s*workflow_run\s*:/

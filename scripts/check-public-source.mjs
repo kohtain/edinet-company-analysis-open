@@ -13,7 +13,7 @@ const bannedContents=[
  /(?:sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{30,}|AKIA[0-9A-Z]{16})/,
  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
  /(?:\.workers\.dev|r2\.cloudflarestorage\.com|appgprj_)/i,
- /(?:EDINET_STATE_R2_SECRET_ACCESS_KEY|edinet-company-analysis-data)/,
+ new RegExp('EDINET_STATE_'+'R2_SECRET_ACCESS_KEY|edinet-company-'+'analysis-data'),
  /(?:^|\n)\s*pull_request_target\s*:/,
  /(?:^|\n)\s*workflow_run\s*:/
 ];

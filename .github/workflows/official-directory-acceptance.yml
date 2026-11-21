@@ -1,0 +1,56 @@
+name: One-off official EDINET code list acceptance (no data upload)
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/official-directory-acceptance.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.repository == 'kohtain/edinet-company-analysis-open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download official FSA EDINET code list
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 2 \
+            --connect-timeout 12 --max-time 45 \
+            "https://disclosure2dl.edinet-fsa.go.jp/searchdocument/codelist/Edinetcode.zip" \
+            -o "$RUNNER_TEMP/Edinetcode.zip"
+      - name: Verify offline transformation end to end without publishing any data
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/build-edinet-company-directory.mjs \
+            --zip="$RUNNER_TEMP/Edinetcode.zip" --snapshot=auto \
+            > "$RUNNER_TEMP/edinet-directory-result.json"
+          node --input-type=module <<'NODE'
+          import {readFileSync,appendFileSync} from 'node:fs';
+          const data=JSON.parse(readFileSync(process.env.RUNNER_TEMP+'/edinet-directory-result.json','utf8'));
+          if(!Number.isInteger(data.count)||data.count<3000||data.count>6000||
+             !/^\d{4}-\d{2}-\d{2}$/.test(data.snapshotDate)||
+             !/^[a-f0-9]{64}$/.test(data.sourceZipSha256)||
+             !/^[a-f0-9]{64}$/.test(data.dataSha256)||data.productionChanged!==false)
+            throw Error('Unverified EDINET directory builder output');
+          console.log(JSON.stringify({
+            sourceDate:data.snapshotDate,companyCount:data.count,
+            sourceZipSha256:data.sourceZipSha256,
+            projectionSha256:data.dataSha256,
+            productionChanged:data.productionChanged,
+          }));
+          const summary='## EDINET official code-list ingestion accepted\n\n'+
+            '- Source date: '+data.snapshotDate+'\n'+
+            '- Eligible domestic listed issuers: '+data.count+'\n'+
+            '- ZIP SHA-256: '+data.sourceZipSha256+'\n'+
+            '- No original ZIP, derived directory data, credentials or R2 writes were published.\n';
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY,summary);
+          NODE

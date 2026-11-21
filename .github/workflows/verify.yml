@@ -1,0 +1,27 @@
+name: Verify public EDINET core
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source contains no private data, credentials or privileged triggers
+        run: npm run check:public
+      - name: Verify deterministic core tests without secrets or network access
+        run: npm test
+      - name: Verify offline CLI syntax and installed ZIP reader
+        run: |
+          node --check scripts/build-edinet-company-directory.mjs
+          command -v unzip

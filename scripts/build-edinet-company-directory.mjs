@@ -3,9 +3,9 @@
 // Prerequisites: Node 22+ and the system unzip command.
 import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {resolve,sep} from 'node:path';
+import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
-import {buildEdinetCompanyDirectory,compareEdinetDirectory,edinetCodeListSnapshot} from '../lib/edinet-company-directory.mjs';
+import {buildEdinetCompanyDirectory,compareEdinetDirectory} from '../lib/edinet-company-directory.mjs';
 import {issuerDirectoryClientPayload,validateIssuerDirectoryManifest,EDINET_DIRECTORY_POINTER} from '../lib/edinet-directory-release.mjs';
 
 const args={};
@@ -32,8 +32,8 @@ if(names.length!==1||names[0].includes('\\')||names[0].split('/').includes('..')
 const contents=execFileSync('unzip',['-p',input,names[0]],{timeout:25000,maxBuffer:10_000_001});
 if(contents.length<100||contents.length>10_000_000)throw Error('EDINET CSV has an unexpected size');
 const csv=new TextDecoder('shift_jis',{fatal:true}).decode(contents);
-const snapshotDate=args.snapshot==='auto'?edinetCodeListSnapshot(csv):args.snapshot;
-const directory=buildEdinetCompanyDirectory(csv,{snapshotDate,sourceZipSha256:zipSha256});
+const directory=buildEdinetCompanyDirectory(csv,{snapshotDate:args.snapshot,sourceZipSha256:zipSha256});
+const {snapshotDate}=directory;
 const previousMaster=args.compare?JSON.parse(readFileSync(args.compare,'utf8')):null;
 const comparison=previousMaster?compareEdinetDirectory(directory,previousMaster):null;
 const served=JSON.stringify(issuerDirectoryClientPayload(directory))+'\n';
